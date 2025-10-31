@@ -1,11 +1,15 @@
 import {Db, MongoClient} from "mongodb"
+import dotenv from "dotenv"
+
+dotenv.config()
 
 let client : MongoClient
 let db : Db
 
 export const  connectToMongoDb = async() : Promise<void> =>{
     try{
-        const urlMongo = "mongodb+srv://jfernandezg20_db_user:Y276ARj5@cluster0.zolqtad.mongodb.net/?appName=Cluster0"
+        const urlMongo = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.CLUSTER}.zolqtad.mongodb.net/?appName=${process.env.CLUSTER_NAME}`;
+
         client = new MongoClient(urlMongo)
         await client.connect();
         db = client.db("ejercicio_clase1");

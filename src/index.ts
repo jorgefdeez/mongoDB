@@ -1,7 +1,9 @@
 import {connectToMongoDb} from "./mongo"
 import express from "express"
 import rutas from "./routes"
+import dotenv from "dotenv"
 
+dotenv.config()
 
 connectToMongoDb()
 const app = express()
