@@ -73,16 +73,31 @@ router.post("/", verifyToken, async (req : AuthRequest, res)=>{
     }
 })
 
-/*
-router.get("/:id", async (req,res) =>{  
-    try{
-        const album = await coleccion().findOne({_id : new ObjectId(req.params.id)})
-        album ? res.json(album) : res.status(404).json({message: "No existe album para ese id"})
-    }catch(err){
-        res.status(404).json({err: "Algo ha fallado"})
+router.get("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "ID no válido" });
+        }
+
+        const user = req.userJwt as { id: string };
+
+        const album = await coleccion().findOne({
+            _id: new ObjectId(id),
+            userId: user.id  
+        });
+
+        if (!album) {
+            return res.status(404).json({ message: "No se encontró el álbum o no pertenece al usuario" });
+        }
+
+        res.json(album);
+
+    } catch (err) {
+        res.status(500).json({ error: "Algo ha fallado" });
     }
-})
-    */
+});
 
 router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
     try{
@@ -156,15 +171,38 @@ router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
 
 })
 
+router.post("/many", verifyToken, async (req: AuthRequest, res) => {
+  try {
+    const albums = req.body as Omit<Album, "userId">[]; // Array de álbumes sin userId
 
-//clase 6 noviembre 2025
-router.post("/many",async(req, res)=>{
-    try{
-        const result = await coleccion().insertMany(req.body.b1)
-        res.status(201).json(result)
-    }catch(err){
-        res.status(404).json({error:"No has creado nada"})
+    if (!Array.isArray(albums) || albums.length === 0) {
+      return res.status(400).json({ message: "Debes enviar un array de álbumes" });
     }
-})
+
+    const usercito = req.userJwt as {
+      id: string,
+      name: string
+    };
+
+    const albuns = coleccion();
+
+    // Añadimos userId a cada álbum
+    const albumsConUser = albums.map(album => ({
+      ...album,
+      userId: usercito.id
+    }));
+
+    const result = await albuns.insertMany(albumsConUser);
+
+    res.status(201).json({
+      message: "Se han creado los álbumes",
+      resultado: result.insertedIds
+    });
+  } catch (err) {
+    res.status(500).json({ message: err });
+  }
+});
+
+
 
 export default router
